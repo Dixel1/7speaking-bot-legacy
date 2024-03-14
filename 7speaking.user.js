@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         7Speaking Bot Legacy
+// @name         7Speaking Bot Legacy - BETA
 // @namespace    https://github.com/Dixel1
-// @version      8.5
+// @version      8.7b1
 // @description  Automatize 7speaking
 // @author       quantumsheep & Dixel1
 // @match        https://user.7speaking.com/*
@@ -20,29 +20,22 @@
         throw new Error(message);
     }
 
-    async function waitForQuerySelector(selector) {
+    async function waitForQuerySelector(selector, interval = 1000) {
         console.log(`Waiting for querySelector('${selector}')`)
 
-        return new Promise(resolve => {
-            const interval = setInterval(() => {
-                const e = document.querySelector(selector);
+        while (true) {
+            const e = document.querySelector(selector);
 
-                if (e) {
-                    clearInterval(interval);
-                    resolve(e);
-                }
-            }, 1000);
-        });
+            if (e) {
+                return e;
+            }
+
+            await wait(interval);
+        }
     }
 
     function getReactElement(e) {
-        for (const key in e) {
-            if (key.startsWith('__reactInternalInstance$')) {
-                return e[key];
-            }
-        }
-
-        return null;
+        return Object.values(e).find(key => key.startsWith('__reactInternalInstance$'));
     }
 
     async function completeQuiz() {
@@ -62,11 +55,7 @@
         }
 
         function getInputElement(answer) {
-            let e = document.querySelector('.question__form input');
-
-            if (!e) {
-                e = document.querySelector('.question__form textarea');
-            }
+            const e = document.querySelector('.question__form input') || document.querySelector('.question__form textarea');
 
             if (e) {
                 return {
@@ -75,23 +64,21 @@
                 };
             }
 
-            const buttons = document.querySelectorAll('.answer-container button');
+            const buttons = Array.from(document.querySelectorAll('.answer-container button'));
+            const button = buttons.find(button => button.querySelector('.question__customLabel').innerText.trim() === answer.trim());
 
-            for (const button of buttons) {
-                if (button.querySelector('.question__customLabel').innerText.trim() === answer.trim()) {
-                    return {
-                        element: button,
-                        type: 'button'
-                    };
-                }
+            if (button) {
+                return {
+                    element: button,
+                    type: 'button'
+                };
             }
 
             return null;
         }
 
         function getSubmitButton() {
-            const e = document.querySelector('.question__form button[type=submit]');
-            return e;
+            return document.querySelector('.question__form button[type=submit]');
         }
 
         console.log('Searching for the answer...');
@@ -192,37 +179,37 @@
                 if (optionsAreTypeof('boolean')) {
                     console.log(`Options are booleans`);
 
-                    const lines = [...document.querySelectorAll('.question_variant tbody tr')];
+                    const lines = Array.from(document.querySelectorAll('.question_variant tbody tr'));
 
-                    for (const i in lines) {
-                        const inputs = lines[i].querySelectorAll('td input');
+                    lines.forEach((line, i) => {
+                        const inputs = line.querySelectorAll('td input');
 
-                        for (const j in answer) {
+                        Object.entries(answer).forEach(([j, value]) => {
                             const input = inputs[+j - 1];
 
-                            if (answer[j][i]) {
+                            if (value[i]) {
                                 input.click();
                             }
-                        }
-                    }
+                        });
+                    });
                 } else if (optionsAreTypeof('string') || optionsAreTypeof('number')) {
                     console.log(`Options are strings/numbers`);
 
-                    const columns = [...document.querySelectorAll('.question_variant tbody tr td')];
+                    const columns = Array.from(document.querySelectorAll('.question_variant tbody tr td'));
 
-                    for (const i in answer) {
-                        const inputs = columns[+i - 1].querySelectorAll('input');
+                    columns.forEach((column, i) => {
+                        const inputs = column.querySelectorAll('input');
 
-                        for (const j in answer[i]) {
+                        Object.entries(answer[i]).forEach(([j, value]) => {
                             const input = getReactElement(inputs[j]);
 
                             input.memoizedProps.onChange({
                                 target: {
-                                    value: answer[i][j].toString(),
+                                    value: value.toString(),
                                 },
                             });
-                        }
-                    }
+                        });
+                    });
                 } else {
                     return error(`Can't understand this type of options`);
                 }
@@ -234,9 +221,9 @@
                 if (isNaN(answer)) {
                     const options = answer.split(',');
 
-                    for (const option of options) {
+                    options.forEach(option => {
                         inputs[option.charCodeAt(0) - 'A'.charCodeAt(0)].click();
-                    }
+                    });
                 } else {
                     inputs[+answer - 1].click();
                 }
@@ -263,13 +250,13 @@
             const e = await waitForQuerySelector('.scrollableList .scrollableList__content .MuiButtonBase-root');
             e.click();
 
-            routes();
+            await routes();
         } else if (isPath(/^\/workshop\/exams-tests/)) {
             const search = new URLSearchParams(location.search);
 
             if (search.has('id')) {
                 await completeExam();
-                routes();
+                await routes();
             } else {
                 const nextExam = await waitForQuerySelector('.lists .list__items.active');
                 nextExam.click();
@@ -284,7 +271,7 @@
 
                 await wait(1000);
 
-                routes();
+                await routes();
             }
         } else if (isPath(/^\/workshop/)) {
             console.log(`Current route is /workshop`);
@@ -311,14 +298,14 @@
 
             quizButton.click();
 
-            routes();
+            await routes();
         } else if (isPath(/^\/document\/\d+/)) {
             console.log(`Current route is /document`);
 
             const e = await waitForQuerySelector('.appBarTabs__testTab');
             e.click();
 
-            routes();
+            await routes();
         } else if (isPath(/^\/quiz/)) {
             console.log(`Current route is /quiz`);
 
@@ -328,16 +315,16 @@
                 location.href = '/home';
             } else {
                 await completeQuiz();
-                routes();
+                await routes();
             }
         }
     }
 
     if (document.readyState === 'complete') {
-        routes();
+        await routes();
     } else {
         window.addEventListener('load', async () => {
-            routes();
+            await routes();
         });
     }
 })();
