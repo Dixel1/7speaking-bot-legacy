@@ -1,11 +1,12 @@
 // ==UserScript==
-// @name         7Speaking Bot Legacy
+// @name         7Speaking Bot Legacy - BETA
 // @namespace    https://github.com/Dixel1
-// @version      8.5
+// @version      8.7b1
 // @description  Automatize 7speaking
 // @author       quantumsheep & Dixel1
 // @match        https://user.7speaking.com/*
 // @grant        none
+// @help         Juliendnte
 // ==/UserScript==
 
 (async () => {
@@ -51,8 +52,11 @@
             let container = getReactElement(e);
 
             while (container) {
-                if (container.memoizedProps) {
-                    return String(container.memoizedProps.children[5].props.children[0].props.children.props.answerOptions.answer[0].value);
+                if (container.pendingProps.children[6].props.children[0].props.children.props.answer) {
+                    return String(container.pendingProps.children[6].props.children[0].props.children.props.answer);
+                }
+                if (container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value) {
+                    return String(container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value);
                 }
 
                 container = container.return;
@@ -90,8 +94,7 @@
         }
 
         function getSubmitButton() {
-            const e = document.querySelector('.question__form button[type=submit]');
-            return e;
+            return document.querySelector('.question__form button[type=submit]');
         }
 
         console.log('Searching for the answer...');
@@ -117,7 +120,7 @@
             for (let i = 0; i < answer.length; i++) {
                 input.element.focus();
                 document.execCommand('insertText', false, answer[i]);
-                await wait(100); // Add a small delay between each character
+                await wait(Math.random() * (400 - 100) + 100);// Add a small delay between each character
             }
             input.element.blur(); // Simulate loss of focus
             await wait(Math.random() * (8000 - 3000) + 3000); // Random delay between 3 and 8 seconds
@@ -125,7 +128,7 @@
             input.element.click();
         }
 
-        await wait(200);
+        await wait(Math.random() * (300 - 200) + 200);
 
         const button = getSubmitButton();
 
@@ -137,13 +140,13 @@
 
         button.click();
 
-        await wait(1000); // Add delay after clicking "Validate"
+        await wait(Math.random() * (1500 - 1000) + 1000); // Add delay after clicking "Validate"
 
         console.log(`Clicking "Next" button`);
 
         button.click();
 
-        await wait(500);
+        await wait(Math.random() * (600 - 400) + 400);
     }
 
     async function completeExam() {
@@ -183,7 +186,7 @@
                 return error("Can't find answer");
             } else {
                 submitButton.click();
-                await wait(1000);
+                await wait(Math.random() * (2000 - 1000) + 1000);
             }
         } else {
             if (typeof answer === 'object') {
@@ -227,7 +230,7 @@
                     return error(`Can't understand this type of options`);
                 }
 
-                await wait(1000);
+                await wait(Math.random() * (2000 - 1000) + 1000);
             } else {
                 const inputs = document.querySelectorAll('.question_variant label');
 
@@ -245,10 +248,10 @@
             const submitButton = await waitForQuerySelector('.buttons_container button:last-child');
 
             submitButton.click();
-            await wait(1000);
+            await wait(Math.random() * (2000 - 1000) + 1000);
 
             submitButton.click();
-            await wait(1000);
+            await wait(Math.random() * (2000 - 1000) + 1000);
         }
     }
 
@@ -263,18 +266,16 @@
             const e = await waitForQuerySelector('.scrollableList .scrollableList__content .MuiButtonBase-root');
             e.click();
 
-            routes();
         } else if (isPath(/^\/workshop\/exams-tests/)) {
             const search = new URLSearchParams(location.search);
 
             if (search.has('id')) {
                 await completeExam();
-                routes();
             } else {
                 const nextExam = await waitForQuerySelector('.lists .list__items.active');
                 nextExam.click();
 
-                await wait(300);
+                await wait(Math.random() * (600 - 300) + 300);
 
                 const modalConfirmButton = document.querySelector('.confirmCloseDialog__buttons button:last-child');
 
@@ -282,9 +283,7 @@
                     modalConfirmButton.click();
                 }
 
-                await wait(1000);
-
-                routes();
+                await wait(Math.random() * (3000 - 1000) + 1000);
             }
         } else if (isPath(/^\/workshop/)) {
             console.log(`Current route is /workshop`);
@@ -310,15 +309,12 @@
             }
 
             quizButton.click();
-
-            routes();
         } else if (isPath(/^\/document\/\d+/)) {
             console.log(`Current route is /document`);
 
             const e = await waitForQuerySelector('.appBarTabs__testTab');
             e.click();
 
-            routes();
         } else if (isPath(/^\/quiz/)) {
             console.log(`Current route is /quiz`);
 
@@ -326,18 +322,19 @@
 
             if (document.querySelector('.result-container')) {
                 location.href = '/home';
+                return
             } else {
                 await completeQuiz();
-                routes();
             }
         }
+        await routes();
     }
 
     if (document.readyState === 'complete') {
-        routes();
+        await routes();
     } else {
         window.addEventListener('load', async () => {
-            routes();
+            await routes();
         });
     }
 })();
