@@ -11,12 +11,29 @@ An attempt to automatize [7Speaking](7speaking.com). Works for "My7Speaking" and
 - Let the bot do its work.
 - Enjoy!
 
-# Changelogs :
+## Changelogs :
 
 Here’s a summary of the changes made to the code:
 
-- Conversion to String: The findAnswer function was modified to convert the response into a string. This adjustment allows handling cases where the response is a number.
-- Simulating Keystrokes: When the input type is ‘input’, the code was altered to simulate typing each character of the response. This is achieved using the document.execCommand('insertText', false, answer[i]); method within a loop.
-- Random Response Delay: The response delay after entering the answer was adjusted to be random, ranging between 3 and 8 seconds. This is accomplished by using Math.random() to generate a random number, multiplying it by the difference between the maximum and minimum delay, and then adding the minimum delay.
+1. Metadata Block:
+  - Updated the script name to "7Speaking Bot Legacy - BETA" and incremented the version number from 8.5 to 8.7b1. Added a @help field with the value "Juliendnte".
+These updates reflect the new **working** beta version thanks to @juliendnte.
 
-These modifications were implemented to address issues encountered while using the script on the target website. They aim to enhance the script’s compatibility with the specific logic of the website for input detection in form fields.
+2. Function findAnswer in completeQuiz:
+- Added a check for container.pendingProps.children[6].props.children[0].props.children.props.answer to retrieve the answer, while retaining the existing check for container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value.
+This makes the script more robust by ensuring it can retrieve the answer from different property paths. Additionally, the response is converted to a string to handle cases where the response is a number.
+
+3. Simulating Keystrokes:
+- When the input type is ‘input’, the code was altered to simulate typing each character of the response using document.execCommand('insertText', false, answer[i]); within a loop.
+This simulates human typing behavior, making the script's actions appear more natural and reducing the likelihood of detection by automated systems.
+
+4. Random Response Delay:
+- Adjusted the response delay after entering the answer to be random, ranging between 3 and 8 seconds. This is accomplished using Math.random() to generate a random number, multiplying it by the difference between the maximum and minimum delay, and then adding the minimum delay.
+Adding randomization to delays helps mimic human behavior more closely, making the script's actions less predictable and more natural.
+
+5. Route Handling:
+- Moved the recursive call to routes() to the end of the routes function.
+This ensures the function is called after all conditions are checked and actions are performed, preventing potential infinite loops or missed route checks.
+
+
+These modifications were implemented to address issues encountered while using the script on the target website. They aim to enhance the script’s compatibility with the specific logic of the website for input detection in form fields, improve functionality, robustness, and mimic human behavior more effectively.
