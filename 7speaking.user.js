@@ -6,6 +6,7 @@
 // @author       quantumsheep & Dixel1
 // @match        https://user.7speaking.com/*
 // @grant        none
+// @help         Juliendnte
 // ==/UserScript==
 
 (async () => {
@@ -20,22 +21,29 @@
         throw new Error(message);
     }
 
-    async function waitForQuerySelector(selector, interval = 1000) {
+    async function waitForQuerySelector(selector) {
         console.log(`Waiting for querySelector('${selector}')`)
 
-        while (true) {
-            const e = document.querySelector(selector);
+        return new Promise(resolve => {
+            const interval = setInterval(() => {
+                const e = document.querySelector(selector);
 
-            if (e) {
-                return e;
-            }
-
-            await wait(interval);
-        }
+                if (e) {
+                    clearInterval(interval);
+                    resolve(e);
+                }
+            }, 1000);
+        });
     }
 
     function getReactElement(e) {
-        return Object.values(e).find(key => key.startsWith('__reactInternalInstance$'));
+        for (const key in e) {
+            if (key.startsWith('__reactInternalInstance$')) {
+                return e[key];
+            }
+        }
+
+        return null;
     }
 
     async function completeQuiz() {
@@ -44,8 +52,11 @@
             let container = getReactElement(e);
 
             while (container) {
-                if (container.memoizedProps) {
-                    return String(container.memoizedProps.children[5].props.children[0].props.children.props.answerOptions.answer[0].value);
+                if (container.pendingProps.children[6].props.children[0].props.children.props.answer) {
+                    return String(container.pendingProps.children[6].props.children[0].props.children.props.answer);
+                }
+                if (container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value) {
+                    return String(container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value);
                 }
 
                 container = container.return;
@@ -55,7 +66,11 @@
         }
 
         function getInputElement(answer) {
-            const e = document.querySelector('.question__form input') || document.querySelector('.question__form textarea');
+            let e = document.querySelector('.question__form input');
+
+            if (!e) {
+                e = document.querySelector('.question__form textarea');
+            }
 
             if (e) {
                 return {
@@ -64,14 +79,15 @@
                 };
             }
 
-            const buttons = Array.from(document.querySelectorAll('.answer-container button'));
-            const button = buttons.find(button => button.querySelector('.question__customLabel').innerText.trim() === answer.trim());
+            const buttons = document.querySelectorAll('.answer-container button');
 
-            if (button) {
-                return {
-                    element: button,
-                    type: 'button'
-                };
+            for (const button of buttons) {
+                if (button.querySelector('.question__customLabel').innerText.trim() === answer.trim()) {
+                    return {
+                        element: button,
+                        type: 'button'
+                    };
+                }
             }
 
             return null;
@@ -104,7 +120,7 @@
             for (let i = 0; i < answer.length; i++) {
                 input.element.focus();
                 document.execCommand('insertText', false, answer[i]);
-                await wait(100); // Add a small delay between each character
+                await wait(Math.random() * (400 - 100) + 100);// Add a small delay between each character
             }
             input.element.blur(); // Simulate loss of focus
             await wait(Math.random() * (8000 - 3000) + 3000); // Random delay between 3 and 8 seconds
@@ -112,7 +128,7 @@
             input.element.click();
         }
 
-        await wait(200);
+        await wait(Math.random() * (300 - 200) + 200);
 
         const button = getSubmitButton();
 
@@ -124,13 +140,13 @@
 
         button.click();
 
-        await wait(1000); // Add delay after clicking "Validate"
+        await wait(Math.random() * (1500 - 1000) + 1000); // Add delay after clicking "Validate"
 
         console.log(`Clicking "Next" button`);
 
         button.click();
 
-        await wait(500);
+        await wait(Math.random() * (600 - 400) + 400);
     }
 
     async function completeExam() {
@@ -170,7 +186,7 @@
                 return error("Can't find answer");
             } else {
                 submitButton.click();
-                await wait(1000);
+                await wait(Math.random() * (2000 - 1000) + 1000);
             }
         } else {
             if (typeof answer === 'object') {
@@ -179,51 +195,51 @@
                 if (optionsAreTypeof('boolean')) {
                     console.log(`Options are booleans`);
 
-                    const lines = Array.from(document.querySelectorAll('.question_variant tbody tr'));
+                    const lines = [...document.querySelectorAll('.question_variant tbody tr')];
 
-                    lines.forEach((line, i) => {
-                        const inputs = line.querySelectorAll('td input');
+                    for (const i in lines) {
+                        const inputs = lines[i].querySelectorAll('td input');
 
-                        Object.entries(answer).forEach(([j, value]) => {
+                        for (const j in answer) {
                             const input = inputs[+j - 1];
 
-                            if (value[i]) {
+                            if (answer[j][i]) {
                                 input.click();
                             }
-                        });
-                    });
+                        }
+                    }
                 } else if (optionsAreTypeof('string') || optionsAreTypeof('number')) {
                     console.log(`Options are strings/numbers`);
 
-                    const columns = Array.from(document.querySelectorAll('.question_variant tbody tr td'));
+                    const columns = [...document.querySelectorAll('.question_variant tbody tr td')];
 
-                    columns.forEach((column, i) => {
-                        const inputs = column.querySelectorAll('input');
+                    for (const i in answer) {
+                        const inputs = columns[+i - 1].querySelectorAll('input');
 
-                        Object.entries(answer[i]).forEach(([j, value]) => {
+                        for (const j in answer[i]) {
                             const input = getReactElement(inputs[j]);
 
                             input.memoizedProps.onChange({
                                 target: {
-                                    value: value.toString(),
+                                    value: answer[i][j].toString(),
                                 },
                             });
-                        });
-                    });
+                        }
+                    }
                 } else {
                     return error(`Can't understand this type of options`);
                 }
 
-                await wait(1000);
+                await wait(Math.random() * (2000 - 1000) + 1000);
             } else {
                 const inputs = document.querySelectorAll('.question_variant label');
 
                 if (isNaN(answer)) {
                     const options = answer.split(',');
 
-                    options.forEach(option => {
+                    for (const option of options) {
                         inputs[option.charCodeAt(0) - 'A'.charCodeAt(0)].click();
-                    });
+                    }
                 } else {
                     inputs[+answer - 1].click();
                 }
@@ -232,10 +248,10 @@
             const submitButton = await waitForQuerySelector('.buttons_container button:last-child');
 
             submitButton.click();
-            await wait(1000);
+            await wait(Math.random() * (2000 - 1000) + 1000);
 
             submitButton.click();
-            await wait(1000);
+            await wait(Math.random() * (2000 - 1000) + 1000);
         }
     }
 
@@ -250,18 +266,16 @@
             const e = await waitForQuerySelector('.scrollableList .scrollableList__content .MuiButtonBase-root');
             e.click();
 
-            await routes();
         } else if (isPath(/^\/workshop\/exams-tests/)) {
             const search = new URLSearchParams(location.search);
 
             if (search.has('id')) {
                 await completeExam();
-                await routes();
             } else {
                 const nextExam = await waitForQuerySelector('.lists .list__items.active');
                 nextExam.click();
 
-                await wait(300);
+                await wait(Math.random() * (600 - 300) + 300);
 
                 const modalConfirmButton = document.querySelector('.confirmCloseDialog__buttons button:last-child');
 
@@ -269,9 +283,7 @@
                     modalConfirmButton.click();
                 }
 
-                await wait(1000);
-
-                await routes();
+                await wait(Math.random() * (3000 - 1000) + 1000);
             }
         } else if (isPath(/^\/workshop/)) {
             console.log(`Current route is /workshop`);
@@ -297,15 +309,12 @@
             }
 
             quizButton.click();
-
-            await routes();
         } else if (isPath(/^\/document\/\d+/)) {
             console.log(`Current route is /document`);
 
             const e = await waitForQuerySelector('.appBarTabs__testTab');
             e.click();
 
-            await routes();
         } else if (isPath(/^\/quiz/)) {
             console.log(`Current route is /quiz`);
 
@@ -313,11 +322,12 @@
 
             if (document.querySelector('.result-container')) {
                 location.href = '/home';
+                return
             } else {
                 await completeQuiz();
-                await routes();
             }
         }
+        await routes();
     }
 
     if (document.readyState === 'complete') {
