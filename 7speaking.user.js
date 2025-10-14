@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         7Speaking Bot Legacy - BETA
 // @namespace    https://github.com/Dixel1
-// @version      8.7b2
+// @version      8.7b3
 // @description  Automatize 7speaking
-// @author       quantumsheep & Dixel1
+// @author       quantumsheep & Dixel1 
 // @match        https://user.7speaking.com/*
 // @grant        none
 // @help         Juliendnte
-// @tuners       Astronas
+// @tuners       Astronas & orkeilius
 // ==/UserScript==
 
 // This script is designed to automate the process of completing quizzes and exams on the 7speaking platform.
@@ -115,7 +115,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
 
     function getReactElement(e) { // Function to get the React element from a DOM element
         for (const key in e) { // Iterate over the properties of the DOM element
-            if (key.startsWith('__reactInternalInstance$')) { // Check for the React internal instance property
+            if (key.startsWith('__reactFiber$')) { // Check for the React internal instance property
                 return e[key]; // Return the React element if found
             }
         }
@@ -131,12 +131,12 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
             let container = getReactElement(e); // Get the React element from the question container
 
             while (container) { // Traverse the React component tree
-                if (container.pendingProps.children[6].props.children[0].props.children.props.answer) { // Check if the component has an answer
-                    return String(container.pendingProps.children[6].props.children[0].props.children.props.answer); // Return the answer as a string
-                } 
-                if (container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value) { // Check if the component has answer options
-                    return String(container.memoizedProps.children[6].props.children[0].props.children.props.answerOptions.answer[0].value); // Return the first answer option value as a string
-                } 
+                if (container.pendingProps.children[5].props.children[0].props.children.props.answer) { // Check if the component has an answer
+                    return String(container.pendingProps.children[5].props.children[0].props.children.props.answer); // Return the answer as a string
+                }
+                if (container.memoizedProps.children[5].props.children[0].props.children.props.answerOptions.answer[0].value) { // Check if the component has answer options
+                    return String(container.memoizedProps.children[5].props.children[0].props.children.props.answerOptions.answer[0].value); // Return the first answer option value as a string
+                }
 
                 container = container.return; // Move up the React component tree
             }
@@ -174,7 +174,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
 
         function getSubmitButton() { // Function to get the submit button element
             return document.querySelector('.question__form button[type=submit]'); // Try to find a submit button in the question form
-        } 
+        }
 
         console.log('Searching for the answer...'); // Log the start of the answer search
         // Find the answer in the React component tree
@@ -183,7 +183,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
 
         if (answer === null || answer === undefined) { // Check if the answer is null or undefined
             return error("Can't find answer"); // If no answer is found, throw an error
-        } 
+        }
 
         console.log(`Answer is "${answer}"`); // Log the answer
 
@@ -212,8 +212,8 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
                     input.element.focus(); // Focus on the input element
                     document.execCommand('insertText', false, answer[i]); // Insert the character into the input element
                     await wait(Math.random() * (400 - 100) + 100); // Add a random delay between 100ms and 400ms after each character insertion
-                } 
-            } 
+                }
+            }
             input.element.blur(); // Blur the input element after filling it
             await wait(Math.random() * (8000 - 3000) + 3000); // Add a delay after filling the input
         } else if (input.type === 'button') { // If the input element is a button
@@ -230,7 +230,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
                         const anotherButton = buttons[anotherButtonIndex]; // Get the another button element based on the calculated index
                         anotherButton.click(); // Click the another button to simulate an error
                         console.log(`Simulated error: clicked on another button`); // Log the simulated error with the another button
-                    } 
+                    }
                 }
             } else { // If no error should be simulated
                 input.element.click(); // Click the button element to submit the answer
@@ -245,7 +245,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
 
         if (!button) { // Check if the submit button was found
             return error("Can't find submit button"); // If no submit button is found, throw an error
-        } 
+        }
 
         console.log(`Clicking "Validate" button`); // Log the action of clicking the "Validate" button
         // Uncomment the next line to add a random delay before clicking the "Validate" button
@@ -261,7 +261,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
         button.click(); // Click the "Next" button again (this is usually the same button as "Validate")
 
         await wait(Math.random() * (600 - 400) + 400); // Add a small delay after clicking "Next"
-        console.log(`Waiting for the next question...`); 
+        console.log(`Waiting for the next question...`);
     }
 
     async function completeExam() { // Function to complete the exam
@@ -290,7 +290,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
                 container = container.return; // Move up the React component tree
             }
 
-            return null; // Return null if no answer is found 
+            return null; // Return null if no answer is found
         } // End of findAnswer function
 
         const answer = await findAnswer(); // Call the findAnswer function to get the answer
@@ -303,7 +303,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
             } else { // If the submit button is found
                 submitButton.click(); // Click the submit button
                 await wait(Math.random() * (2000 - 1000) + 1000); // Add a delay after clicking the submit button
-            } 
+            }
         } else { // If an answer is found
             if (typeof answer === 'object') { // Check if the answer is an object (indicating multiple answers)
                 const optionsAreTypeof = (type) => Object.values(answer).every(options => options.every(option => typeof option === type)) ; // Function to check if all options are of a specific type
@@ -433,7 +433,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
 
             if (useRealTime === 1) { // If useRealTime is set to 1, calculate the actual time for the quiz or exam
                 actualTime = await handleTime(); // Call the handleTime function to get the actual time for the quiz or exam
-                
+
                 // Simulate clicking the script button to open the script
                 const scriptButton = document.querySelector('.videoControls__rightContent .icon__iconButton'); // Try to find the script button in the video controls right content
                 if (scriptButton) { // If the script button is found
@@ -441,7 +441,7 @@ let actualTime = 0; // Variable to store the actual time for the quiz or exam, c
                     console.log('Bouton "Script" cliqué'); // Log that the script button is clicked
                 } else { // If the script button is not found
                     console.error('Bouton "Script" non trouvé'); // Log an error that the script button is not found
-                } 
+                }
 
                 console.log(`Using 60-80% real time ... waiting for ${actualTime} seconds before clicking the test tab`); // Log the waiting time before clicking the test tab
                 await wait(actualTime * 1000); // Wait for the actual time before clicking the test tab
